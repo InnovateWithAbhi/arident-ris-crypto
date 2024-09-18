@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>crypto_service</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>D:\R&amp;D\arident-ris-crypto\bin\Debug\net8.0\crypto-service.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
