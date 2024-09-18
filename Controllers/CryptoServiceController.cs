@@ -14,6 +14,16 @@ namespace crypto_service.Controllers
         /// The AES key used for encryption and decryption.
         /// </summary>
         public string AESKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The RSA private key used for encryption and decryption.
+        /// </summary>
+        public string RSAPrivateKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The RSA public key used for encryption and decryption.
+        /// </summary>
+        public string RSAPublicKey { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -72,6 +82,44 @@ namespace crypto_service.Controllers
             return srDecrypt.ReadToEnd();
         }
 
+        /// <summary>
+        /// Encrypts a plain text string using RSA encryption.
+        /// </summary>
+        /// <param name="plainText">The plain text string to be encrypted.</param>
+        /// <returns>A Base64 encoded encrypted string.</returns>
+        /// <remarks>
+        /// The method uses the RSA public key from the configuration to encrypt the data using OAEP padding with SHA-256.
+        /// </remarks>
+        private string RsaEncrypt(string plainText)
+        {
+            using RSA rsa = RSA.Create();
+            rsa.ImportFromPem(Encoding.UTF8.GetString(Convert.FromBase64String(_cryptoSettings.RSAPublicKey)));
+
+            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+            byte[] encryptedBytes = rsa.Encrypt(plainBytes, RSAEncryptionPadding.OaepSHA256);
+
+            return Convert.ToBase64String(encryptedBytes);
+        }
+
+        /// <summary>
+        /// Decrypts a Base64 encoded string using RSA decryption.
+        /// </summary>
+        /// <param name="cipherText">The Base64 encoded encrypted string.</param>
+        /// <returns>The decrypted plain text string.</returns>
+        /// <remarks>
+        /// The method uses the RSA private key from the configuration to decrypt the data using OAEP padding with SHA-256.
+        /// </remarks>
+        private string RsaDecrypt(string cipherText)
+        {
+            using RSA rsa = RSA.Create();
+            rsa.ImportFromPem(Encoding.UTF8.GetString(Convert.FromBase64String(_cryptoSettings.RSAPrivateKey)));
+
+            byte[] cipherBytes = Convert.FromBase64String(cipherText);
+            byte[] decryptedBytes = rsa.Decrypt(cipherBytes, RSAEncryptionPadding.OaepSHA256);
+
+            return Encoding.UTF8.GetString(decryptedBytes);
+        }
+
         /// <summary>
         /// Encrypts a plain text string using AES and returns the Base64 encoded encrypted data.
         /// </summary>
@@ -126,6 +174,72 @@ namespace crypto_service.Controllers
             catch (FormatException ex)
             {
                 return BadRequest($"Invalid input format: {ex.Message}");
+            }
+            catch (CryptographicException ex)
+            {
+                return StatusCode(500, $"Decryption error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Endpoint for encrypting plain text using RSA encryption.
+        /// </summary>
+        /// <param name="plainText">The plain text string to be encrypted.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the encrypted string in Base64 format, or an error message.</returns>
+        /// <response code="200">Returns the encrypted string.</response>
+        /// <response code="400">If the plainText parameter is null or empty.</response>
+        /// <response code="500">If an encryption error occurs.</response>
+        [Route("RsaEncryption/{plainText}")]
+        [HttpPost]
+        [ProducesResponseType(typeof(string), 200)]
+        public IActionResult RsaEncryption(string plainText)
+        {
+            if (string.IsNullOrWhiteSpace(plainText))
+            {
+                return BadRequest("The plainText parameter is required.");
+            }
+
+            try
+            {
+                var encryptedData = RsaEncrypt(plainText);
+                return Ok(encryptedData);
+            }
+            catch (CryptographicException ex)
+            {
+                return StatusCode(500, $"Encryption error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Endpoint for decrypting a Base64 encoded string using RSA decryption.
+        /// </summary>
+        /// <param name="cipherText">The encrypted string in Base64 format to be decrypted.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the decrypted plain text string, or an error message.</returns>
+        /// <response code="200">Returns the decrypted plain text string.</response>
+        /// <response code="400">If the cipherText parameter is null or invalid.</response>
+        /// <response code="500">If a decryption error occurs.</response>
+        [Route("RsaDecryption")]
+        [HttpPost]
+        [ProducesResponseType(typeof(string), 200)]
+        public IActionResult RsaDecryption([FromBody] string cipherText)
+        {
+            if (string.IsNullOrWhiteSpace(cipherText))
+            {
+                return BadRequest("The cipherText parameter is required.");
+            }
+
+            try
+            {
+                var decryptedData = RsaDecrypt(cipherText);
+                return Ok(decryptedData);
             }
             catch (CryptographicException ex)
             {
