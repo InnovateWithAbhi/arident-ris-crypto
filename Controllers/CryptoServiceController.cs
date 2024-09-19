@@ -125,10 +125,10 @@ namespace crypto_service.Controllers
         /// </summary>
         /// <param name="plainText">The plain text string to be encrypted.</param>
         /// <returns>An IActionResult containing the encrypted data or an error message.</returns>
-        [Route("AesEncryption/{plainText}")]
+        [Route("AesEncryption")]
         [HttpPost]
         [ProducesResponseType(typeof(string), 200)]
-        public IActionResult AesEncryption(string plainText)
+        public IActionResult AesEncryption([FromBody] string plainText)
         {
             if (string.IsNullOrWhiteSpace(plainText))
             {
@@ -155,10 +155,10 @@ namespace crypto_service.Controllers
         /// </summary>
         /// <param name="cipherText">The cipher text string to be decrypted.</param>
         /// <returns>An IActionResult containing the decrypted data or an error message.</returns>
-        [Route("AesDecrypt/{cipherText}")]
+        [Route("AesDecrypt")]
         [HttpPost]
         [ProducesResponseType(typeof(string), 200)]
-        public IActionResult AesDecrypt(string cipherText)
+        public IActionResult AesDecrypt([FromBody] string cipherText)
         {
             if (string.IsNullOrWhiteSpace(cipherText))
             {
@@ -193,10 +193,10 @@ namespace crypto_service.Controllers
         /// <response code="200">Returns the encrypted string.</response>
         /// <response code="400">If the plainText parameter is null or empty.</response>
         /// <response code="500">If an encryption error occurs.</response>
-        [Route("RsaEncryption/{plainText}")]
+        [Route("RsaEncryption")]
         [HttpPost]
         [ProducesResponseType(typeof(string), 200)]
-        public IActionResult RsaEncryption(string plainText)
+        public IActionResult RsaEncryption([FromBody] string plainText)
         {
             if (string.IsNullOrWhiteSpace(plainText))
             {
